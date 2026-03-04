@@ -1,16 +1,28 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.neighbors import KNeighborsRegressor
 import joblib
 
-# قراءة البيانات التي صنعناها
-df = pd.read_csv('train_data.csv')
-X = df[['field3', 'field4', 'field5']] # إشعاع، حرارة، زاوية
-y = df['field1'] * df['field2']       # باور
+def train_models():
+    try:
+        data = pd.read_csv('solar_data_v2.csv')
+        X = data[['irradiance', 'temperature', 'v_oc']]
+        y = data['power']
+        
+        # Train Primary Model (Random Forest)
+        rf = RandomForestRegressor(n_estimators=100, random_state=42)
+        rf.fit(X, y)
+        joblib.dump(rf, 'rf_primary_model.pkl')
+        print("✅ RF Model Trained.")
 
-# تدريب RF
-model = RandomForestRegressor(n_estimators=100)
-model.fit(X, y)
+        # Train Validator Model (KNN)
+        knn = KNeighborsRegressor(n_neighbors=5)
+        knn.fit(X, y)
+        joblib.dump(knn, 'knn_validator_model.pkl')
+        print("✅ KNN Model Trained.")
+        
+    except FileNotFoundError:
+        print("❌ Error: Run data_generator.py first!")
 
-# حفظ "عقل" الموديل في ملف
-joblib.dump(model, 'pv_brain.pkl')
-print("--- [Step 2] AI Brain (Model) Trained and Saved! ---")
+if __name__ == "__main__":
+    train_models()
