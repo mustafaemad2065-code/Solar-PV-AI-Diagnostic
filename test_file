@@ -1,0 +1,47 @@
+import pandas as pd
+import requests
+import time
+
+# 1. حط الـ Write API Key بتاع قناتك هنا
+API_KEY = "HKCLFZPMEMWFGN9I"
+
+# 2. قراءة ملف الداتا الأصلي
+try:
+    print("جاري قراءة الملف...")
+    df = pd.read_csv('file:///Users/joegreeen/Downloads/train_data_mini.csv')
+    
+    # هناخد أول 20 قراية بس نجرب بيهم (عشان ننجز وقتك)
+    df_sample = df.head(20)
+    
+    print("تمت القراءة بنجاح. جاري محاكاة الـ ESP32 وبث البيانات للكلاود...")
+    print("-" * 50)
+    
+    # 3. إرسال البيانات قراءة بقراءة (زي الهاردوير بالظبط)
+    for index, row in df_sample.iterrows():
+        # تجهيز رابط الإرسال (URL) بالبيانات
+        url = f"https://api.thingspeak.com/update?api_key={API_KEY}"
+        url += f"&field1={row['field1']:.2f}"
+        url += f"&field2={row['field2']:.2f}"
+        url += f"&field3={row['field3']:.2f}"
+        url += f"&field4={row['field4']:.2f}"
+        url += f"&field5={row['field5']:.2f}"
+        url += f"&field6={row['field6']:.2f}"
+        url += f"&field7={row['field7']:.2f}"
+        
+        # إرسال الطلب للسيرفر
+        response = requests.get(url)
+        
+        if response.status_code == 200 and response.text != '0':
+            print(f"تم إرسال القراءة رقم {index + 1} بنجاح! (شاهد الداشبورد الآن)")
+        else:
+            print(f"فشل في إرسال القراءة {index + 1}. السيرفر رد بـ: {response.text}")
+            
+        # ThingSpeak المجاني بيشترط الانتظار 15 ثانية بين كل رسالة والتانية
+        print("انتظار 15 ثانية...")
+        time.sleep(15)
+        
+    print("-" * 50)
+    print("تم الانتهاء من بث البيانات! افتح الداشبورد بتاعتك دلوقتي.")
+
+except Exception as e:
+    print(f"حدث خطأ: {e}")

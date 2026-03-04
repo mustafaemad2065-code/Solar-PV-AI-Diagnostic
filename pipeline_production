@@ -1,0 +1,49 @@
+import pandas as pd
+
+# 1. قراءة البيانات (شغلك)
+data = pd.read_csv('solar_readings.csv')
+
+# 2. المكان الفاضي بتاع زميلك (AI Models)
+def get_ai_predictions(temp, cloud_cover):
+    # الموديلات بتاعة زميلك (RF و KNN) هتتكتب هنا بعدين
+    # مؤقتاً هنخليه يرجع أرقام وهمية عشان نكمل شغلنا
+    expected_V = 13.0  # رقم تجريبي
+    expected_I = 1.5   # رقم تجريبي
+    expected_P = expected_V * expected_I
+    return expected_V, expected_I, expected_P
+
+# 3. كود التشخيص المنطقي (شغلك أنت بناءً على Paper 1)
+def diagnose_fault(actual_v, expected_v, actual_i, expected_i, dust):
+    # حساب نسبة الخطأ
+    error_v = actual_v - expected_v
+    error_i = actual_i - expected_i
+    
+    # قواعد التشخيص (Rule-based System)
+    if dust > 150:
+        return "Warning: High Dust! Panel Cleaning Required."
+    elif error_i < -0.5 and abs(error_v) < 0.5: # التيار واقع والفولت سليم
+        return "Fault: Possible String Disconnection!"
+    elif error_v < -1.0 and abs(error_i) < 0.2: # الفولت واقع والتيار سليم
+        return "Fault: Possible Short Circuit in Module!"
+    elif error_v < -1.0 and error_i < -0.5: # الاتنين واقعين
+        return "Fault: Partial Shading Detected!"
+    else:
+        return "System Status: Normal"
+
+# 4. تشغيل خط الأنابيب على الـ 1000 قراءة (شغلك)
+for index, row in data.iterrows():
+    # سحب القرايات الحقيقية من السنسورات
+    actual_V = row['Tracker_V']
+    actual_I = row['Tracker_I']
+    temp = row['Temp']
+    cloud = row['Cloud_Cover']
+    dust = row['Dust']
+    
+    # استدعاء الذكاء الاصطناعي (اللي زميلك هيبرمجه)
+    exp_V, exp_I, exp_P = get_ai_predictions(temp, cloud)
+    
+    # تشغيل كود التشخيص بتاعك
+    status = diagnose_fault(actual_V, exp_V, actual_I, exp_I, dust)
+    
+    # طباعة التقرير أو إرساله لـ ThingSpeak/Telegram
+    print(f"Reading {index}: {status}")
