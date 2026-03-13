@@ -1,0 +1,98 @@
+import joblib
+import numpy as np
+
+def run_hybrid_prediction(irr, temp, dust, v_oc, v_batt, v_charge, curr,
+                          prev_irr, prev_temp, prev_curr):
+
+    # 1️⃣ تحميل موديلات التنبؤ
+    try:
+        rf = joblib.load('rf_predictor.pkl')
+        knn = joblib.load('knn_predictor.pkl')
+    except:
+        return "❌ Prediction models not found! Train them first."
+
+    # 2️⃣ تجهيز البيانات للموديل
+    features = np.array([[irr, temp, dust,
+                          v_oc, v_batt, v_charge, curr,
+                          prev_irr, prev_temp, prev_curr]])
+
+    # 3️⃣ توقع العطل قبل ساعة
+    pred_rf = rf.predict(features)[0]
+    pred_knn = knn.predict(features)[0]
+
+    # 4️⃣ دمج القرار (Hybrid AI)
+    if pred_rf == pred_knn:
+        final_prediction = pred_rf
+    else:
+        final_prediction = "⚠️ Possible Anomaly (Monitor System)"
+
+    # 5️⃣ حساب حالة البطارية
+    soc = ((v_batt - 10.5) / (12.7 - 10.5)) * 100
+    soc = max(0, min(100, soc))
+
+    # 6️⃣ تحليل اتجاه التيار (Trend Analysis)
+    curr_drop = (prev_curr - curr)
+
+    if curr_drop > 1.5 and irr > 500:
+        trend_warning = "⚠️ Current dropping abnormally"
+    else:
+        trend_warning = "Normal trend"
+
+    # 7️⃣ قرارات التحكم
+    load_status = "🔴 OFF (Battery Protection)" if (irr < 50 and soc < 30) else "🟢 ON"
+    pump_status = "🌊 CLEANING REQUIRED" if dust > 75 else "⚪ NORMAL"
+
+    # 8️⃣ التقرير النهائي
+    print("\n" + "="*45)
+    print("   🔮 SOLAR FAULT PREDICTION SYSTEM")
+    print("="*45)
+
+    print(f"📡 Solar Irradiance: {irr} W/m²")
+    print(f"🌡 Temperature: {temp} °C")
+    print(f"🌫 Dust Level: {dust}%")
+
+    print("-"*45)
+
+    print(f"⚡ Voc: {v_oc} V")
+    print(f"🔋 Battery Voltage: {v_batt} V")
+    print(f"⚡ Charge Voltage: {v_charge} V")
+    print(f"🔌 Current: {curr} A")
+
+    print("-"*45)
+
+    print(f"🤖 RF Prediction (1h ahead):  {pred_rf}")
+    print(f"🤖 KNN Prediction (1h ahead): {pred_knn}")
+    print(f"🧠 Hybrid Decision: {final_prediction}")
+
+    print("-"*45)
+
+    print(f"📊 Battery SoC: {soc:.1f}%")
+    print(f"📉 Trend Analysis: {trend_warning}")
+
+    print("-"*45)
+
+    print(f"⚙️ Load Relay: {load_status}")
+    print(f"⚙️ Cleaning Pump: {pump_status}")
+
+    print("="*45 + "\n")
+
+
+# --------------------------
+# TEST CASES
+# --------------------------
+
+print("Testing: Possible Dust Fault in 1 Hour")
+
+run_hybrid_prediction(
+    irr=850,
+    temp=38,
+    dust=70,
+    v_oc=20.1,
+    v_batt=12.3,
+    v_charge=13.4,
+    curr=2.4,
+
+    prev_irr=900,
+    prev_temp=36,
+    prev_curr=3.9
+)
